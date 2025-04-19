@@ -14,8 +14,7 @@ function PostList() {
 
     const { data, isLoading } = useQuery(["my-post-list"], getPosts);
 
-   // console.log(data); // دیتا هایی که کاربر ساخته است را به ما بر می گرداند
-
+    // console.log(data); // دیتا هایی که کاربر ساخته است را به ما بر می گرداند
 
 
     return (

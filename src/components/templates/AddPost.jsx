@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { ErrorMessage, Field, Form, Formik } from "formik";
 import { getCookie } from "utils/cookie";
@@ -9,26 +9,21 @@ import styles from './AddPost.module.css';
 
 
 function AddPost() {
+
     const { data } = useQuery(["get-categories"], getCategory);
 
+    const queryClient = useQueryClient();
 
-    const addHandler = async (values, { setSubmitting }) => {
-        const formData = new FormData();
+    const { mutate: addPost } = useMutation(
+        async (values) => {
+            const formData = new FormData();
+            Object.keys(values).forEach(key => {
+                if (values[key] !== null && values[key] !== undefined) {
+                    formData.append(key, values[key]);
+                }
+            });
 
-
-        //formData اضافه کردن تمام فیلدها به
-        Object.keys(values).forEach(key => {
-            if (values[key] !== null && values[key] !== undefined) {
-                formData.append(key, values[key]);
-            }
-        });
-
-
-        // console.log('formData:', formData);
-
-
-        const token = getCookie("accessToken");
-        try {
+            const token = getCookie("accessToken");
             const res = await axios.post(
                 `${import.meta.env.VITE_BASE_URL}post/create`,
                 formData,
@@ -39,9 +34,22 @@ function AddPost() {
                     },
                 }
             );
-            toast.success(res.data.message);
-        } catch (error) {
-            toast.error("مشکلی پیش آمده است.");
+            return res.data;
+        },
+        {
+            onSuccess: () => {
+                toast.success("پست با موفقیت اضافه شد");
+                queryClient.invalidateQueries(["my-post-list"]);
+            },
+            onError: () => {
+                toast.error("مشکلی پیش آمده است.");
+            }
+        }
+    );
+
+    const addHandler = async (values, { setSubmitting }) => {
+        try {
+            await addPost(values);
         } finally {
             setSubmitting(false);
         }
